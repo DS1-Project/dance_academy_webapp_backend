@@ -26,7 +26,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return UserSerializer
 
     def get_permissions(self):
-        if self.action in ('create', 'list', 'update', 'partial_update'):
+        if self.action in ('create', 'list', 'update', 'partial_update', 'destroy'):
             return [IsAdminOrDirector()]
         return super().get_permissions()
 
@@ -55,3 +55,7 @@ class UserViewSet(viewsets.ModelViewSet):
             )
 
         return qs
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save(update_fields=['is_active'])
