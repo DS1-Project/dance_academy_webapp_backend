@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from .models import User
 from .permissions import INTERNAL_ROLES, IsAdminOrDirector
 from .serializers import (
+    ClientProfileSerializer,
     RegisterSerializer,
     UserCreateSerializer,
     UserInternalUpdateSerializer,
@@ -30,12 +31,16 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserCreateSerializer
         if self.action in ('update', 'partial_update'):
             return UserInternalUpdateSerializer
+        if self.action == 'me':
+            return ClientProfileSerializer
         return UserSerializer
 
     def get_permissions(self):
         if self.action == 'register':
             return [AllowAny()]
-        if self.action in ('create', 'list', 'update', 'partial_update', 'destroy'):
+        if self.action == 'me':
+            return [IsAuthenticated()]
+        if self.action in ('create', 'list', 'update', 'partial_update', 'destroy', 'retrieve'):
             return [IsAdminOrDirector()]
         return super().get_permissions()
 
@@ -76,3 +81,14 @@ class UserViewSet(viewsets.ModelViewSet):
         user = serializer.save()
         response_serializer = UserSerializer(user)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get', 'patch'], url_path='me')
+    def me(self, request):
+        if request.method == 'GET':
+            serializer = self.get_serializer(request.user)
+            return Response(serializer.data)
+
+        serializer = self.get_serializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
