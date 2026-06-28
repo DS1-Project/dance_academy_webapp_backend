@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from .models import User
 from .permissions import INTERNAL_ROLES, IsAdminOrDirector
-from .serializers import UserCreateSerializer, UserSerializer
+from .serializers import UserCreateSerializer, UserInternalUpdateSerializer, UserSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -21,10 +21,12 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create':
             return UserCreateSerializer
+        if self.action in ('update', 'partial_update'):
+            return UserInternalUpdateSerializer
         return UserSerializer
 
     def get_permissions(self):
-        if self.action in ('create', 'list'):
+        if self.action in ('create', 'list', 'update', 'partial_update'):
             return [IsAdminOrDirector()]
         return super().get_permissions()
 

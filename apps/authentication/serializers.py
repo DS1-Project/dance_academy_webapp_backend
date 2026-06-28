@@ -71,3 +71,35 @@ class UserCreateSerializer(serializers.ModelSerializer):
             is_approved=validated_data.get('is_approved', True),
             is_active=validated_data.get('is_active', True),
         )
+
+
+class UserInternalUpdateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False, min_length=8)
+    role = serializers.ChoiceField(choices=INTERNAL_ROLE_CHOICES)
+
+    class Meta:
+        model = User
+        fields = ['password', *USER_INTERNAL_WRITE_FIELDS]
+
+    def validate_role(self, value):
+        role = User.Role(value)
+        if role not in INTERNAL_ROLES:
+            raise serializers.ValidationError(
+                'Solo se pueden asignar roles internos (admin, director o teacher).'
+            )
+        return role
+
+    def validate_email(self, value):
+        user = self.instance
+        if User.objects.filter(email__iexact=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError('Ya existe un usuario con este correo.')
+        return value
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if password:
+            instance.set_password(password)
+        instance.save()
+        return instance
