@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.shape),
+    path('admin/', admin.site.urls),
     
     # Rutas modulares de tu API en inglés apuntando a la carpeta apps/
     path('api/auth/', include('apps.authentication.urls')),
