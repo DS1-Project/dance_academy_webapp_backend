@@ -1,0 +1,73 @@
+from rest_framework import serializers
+
+from .models import User
+from .permissions import INTERNAL_ROLES, INTERNAL_ROLE_CHOICES
+
+USER_READ_ONLY_FIELDS = ('id', 'created_at', 'date_joined')
+USER_PUBLIC_FIELDS = (
+    'id',
+    'email',
+    'username',
+    'first_name',
+    'last_name',
+    'role',
+    'is_active',
+    'is_approved',
+    'created_at',
+    'date_joined',
+)
+USER_INTERNAL_WRITE_FIELDS = (
+    'email',
+    'username',
+    'first_name',
+    'last_name',
+    'role',
+    'is_approved',
+    'is_active',
+)
+
+
+class UserSerializer(serializers.ModelSerializer):
+    role = serializers.ChoiceField(choices=User.Role.choices, read_only=True)
+
+    class Meta:
+        model = User
+        fields = USER_PUBLIC_FIELDS
+        read_only_fields = USER_READ_ONLY_FIELDS
+
+
+class UserCreateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=8)
+    role = serializers.ChoiceField(choices=INTERNAL_ROLE_CHOICES)
+
+    class Meta:
+        model = User
+        fields = ['password', *USER_INTERNAL_WRITE_FIELDS]
+
+    def validate_role(self, value):
+        role = User.Role(value)
+        if role not in INTERNAL_ROLES:
+            raise serializers.ValidationError(
+                'Solo se pueden crear usuarios internos (admin, director o teacher).'
+            )
+        return role
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError('Ya existe un usuario con este correo.')
+        return value
+
+    def create(self, validated_data):
+        password = validated_data.pop('password')
+        username = validated_data.pop('username', None) or validated_data['email'].split('@')[0]
+
+        return User.objects.create_user(
+            username=username,
+            email=validated_data['email'],
+            password=password,
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', ''),
+            role=validated_data['role'],
+            is_approved=validated_data.get('is_approved', True),
+            is_active=validated_data.get('is_active', True),
+        )

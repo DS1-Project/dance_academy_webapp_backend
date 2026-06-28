@@ -22,3 +22,6 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.email} ({self.role})"
+
+    class Meta:
+        db_table = 'auth_user'
