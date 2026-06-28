@@ -67,11 +67,19 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 ASGI_APPLICATION = 'core.asgi.application'
 
-# 7. Conexión limpia y segura a tu base de datos Supabase (PostgreSQL) via URL armada desde el .env
+# 7. Conexión limpia y segura a tu base de datos Supabase (PostgreSQL) via variables del .env
 DATABASES = {
-    'default': env.db_url_config(
-        f"postgres://{env('DB_USER')}:{env('DB_PASSWORD')}@{env('DB_HOST')}:{env('DB_PORT')}/{env('DB_NAME')}"
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),  # Pooler Supavisor (IPv4): aws-0-<region>.pooler.supabase.com
+        'PORT': env('DB_PORT'),  # 5432 session mode (Django local) o 6543 transaction mode
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
+    }
 }
 
 # 8. Validadores de contraseñas por defecto de Django
@@ -105,7 +113,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # 12. Permitir conexiones desde tu servidor Front-End de React (usando Vite por defecto)
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    "http://localhost:5173",  # Puerto estándar de desarrollo de Vite
+    "http://127.0.0.1:5173",
 ]
 
 # Opcional: Permitir credenciales (Cookies, Tokens) si son necesarias en el flujo con React
