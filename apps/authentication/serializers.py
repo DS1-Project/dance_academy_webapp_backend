@@ -1,5 +1,8 @@
+from django.contrib.auth import authenticate
 from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
 
+from .captcha import validate_captcha_token
 from .models import User
 from .permissions import INTERNAL_ROLES, INTERNAL_ROLE_CHOICES
 
@@ -103,3 +106,40 @@ class UserInternalUpdateSerializer(serializers.ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+    captcha_token = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        validate_captcha_token(attrs['captcha_token'])
+
+        user = authenticate(
+            username=attrs['email'],
+            password=attrs['password'],
+        )
+        if user is None:
+            raise serializers.ValidationError('Correo o contraseña incorrectos.')
+
+        if not user.is_active:
+            raise serializers.ValidationError('Esta cuenta está desactivada.')
+
+        if not user.is_approved:
+            raise serializers.ValidationError(
+                'Tu cuenta aún no ha sido aprobada por un administrador.'
+            )
+
+        refresh = RefreshToken.for_user(user)
+        attrs['user'] = user
+        attrs['access'] = str(refresh.access_token)
+        attrs['refresh'] = str(refresh)
+        return attrs
+
+    def to_representation(self, instance):
+        return {
+            'access': instance['access'],
+            'refresh': instance['refresh'],
+            'user': UserSerializer(instance['user']).data,
+        }
