@@ -1,95 +1,115 @@
-
 # ⚙️ DanceAcademyApp - Backend API 🛡️
 
-Esta es la API REST robusta y escalable que motoriza el ecosistema de **DanceAcademyApp**. Provee autenticación segura, control de acceso basado en roles (RBAC), procesamiento transaccional de compras de coreografías y agregaciones SQL optimizadas para reportes estadísticos comerciales.
+This is the robust and scalable REST API that powers the entire ecosystem of **DanceAcademyApp**. It provides secure user authentication, Role-Based Access Control (RBAC), transactional management for choreography purchases, and optimized SQL aggregations for commercial statistical reporting.
 
 ---
 
-## 🛠️ Stack Tecnológico
+## 🛠️ Tech Stack
 
-* **Lenguaje:** Python 3.11+ 🐍
-* **Framework Principal:** Django 5.0 + Django REST Framework (DRF)
-* **Base de Datos Relacional:** PostgreSQL (Supabase / Local)
-* **Autenticación:** JWT (JSON Web Tokens) vía `djangorestframework-simplejwt`
-* **Pruebas:** Django Test Cases (Unidades e Integración)
+* **Language:** Python 3.11+ 🐍
+* **Main Framework:** Django 5.0 + Django REST Framework (DRF)
+* **Relational Database:** PostgreSQL (Supabase / Local)
+* **Authentication:** JWT (JSON Web Tokens) via `djangorestframework-simplejwt`
+* **Testing:** Django Test Cases (Unit & Integration tests)
 
 ---
 
-## 📦 Estructura del Proyecto
+## 📦 Project Structure
 
 ```text
 backend/
-├── core/                # Configuración global del proyecto Django (settings, urls)
-├── apps/                # Aplicaciones modulares del negocio
-│   ├── autenticacion/   # Lógica de Login, Registro, JWT y Roles (Admin, Profesor, Cliente)
-│   ├── usuarios/        # CRUD de administración de usuarios internos
-│   ├── coreografias/    # Catálogo de canciones, videos, reviews y streaming seguro
-│   └── ventas/          # Modelado de Facturación, Ventas, Detalle y pasarela simulada
-├── gestion_academia/    # Directorio raíz del entorno
-├── manage.py            # CLI de comandos de Django
-├── requirements.txt     # Dependencias empaquetadas del proyecto
+├── core/                        # Global Django configuration (settings, urls, wsgi/asgi)
+├── apps/                        # Modular business domain applications
+│   ├── authentication/          # User profiles, Registration, Login, JWT, and RBAC (Admin, Director, Teacher, Client)
+│   ├── choreography/            # Catalog of songs, video streaming logs, reviews, and statistics
+│   └── sales/                   # Invoicing, Sales, details, and simulated payment gateway
+├── env/                         # Virtual environment directory (isolated dependencies)
+├── .env                         # Hidden local file containing secure database keys and credentials
+├── .env.example                 # Template for required environment connection strings
+├── manage.py                    # Django Command Line Interface (CLI)
+└── requirements.txt             # Project dependencies and packaged libraries
 └── .env.example         # Plantilla de secretos e hilos de conexión a la BD
+```
 
-##⚙️ Configuración e Instalación Local
-Sigue estos pasos detallados para configurar el entorno y levantar el servidor de desarrollo en tu máquina:
+## ⚙️  Configuration & Local Installation
+Follow these detailed steps to set up the environment and run the development server on your machine:
 
-1. Navegar al directorio del Backend
-Abre tu terminal y dirígete a la carpeta interna del backend:
+1. Navigate to the Backend Directory
+Open your terminal and enter the project backend root folder:
 
-Bash
-cd backend
-2. Crear y activar el entorno virtual (venv)
-Aísla las dependencias del proyecto ejecutando el comando correspondiente a tu sistema operativo:
+```Bash
+cd dance_academy_webapp_backend
+```
+2. Activate the Virtual Environment
+Activate your existing env folder based on your Operating System and chosen terminal:
 
-En Windows (Símbolo del sistema / PowerShell):
+In Windows (Command Prompt / CMD):
 
-Bash
-python -m venv venv
-.\venv\Scripts\activate
-En macOS / Linux:
+```DOS
+env\Scripts\activate
+```
+In Windows (PowerShell):
 
-Bash
-python3 -m venv venv
-source venv/bin/activate
-3. Instalar las dependencias del proyecto
-Asegúrate de tener pip actualizado e instala las librerías necesarias especificadas en el archivo de requerimientos:
+```PowerShell
+.\env\Scripts\Activate.ps1
+```
+In macOS / Linux / Git Bash:
 
-Bash
+```Bash
+source env/bin/activate
+```
+(Once activated, you will see (env) at the beginning of your terminal line).
+
+3. Install Project Dependencies
+Ensure pip is upgraded and install all required external libraries:
+
+```Bash
 pip install --upgrade pip
 pip install -r requirements.txt
-4. Configurar las Variables de Entorno
-Crea un archivo llamado .env en la raíz de la carpeta backend/ basándote en la plantilla .env.example. Configura allí tus credenciales locales o de tu base de datos en la nube (ej. Supabase):
+```
+4. Configure Environment Variables
+Create a file named .env in the root backend directory (at the same level as manage.py) using .env.example as a template. Populate it with your custom Django secrets and Supabase credentials:
 
-Fragmento de código
+```Plaintext
 DEBUG=True
-SECRET_KEY=tu_clave_secreta_django_personalizada
+SECRET_KEY=your_custom_django_secret_key_here
+
 DB_NAME=postgres
-DB_USER=tu_usuario_postgres
-DB_PASSWORD=tu_contraseña_segura
-DB_HOST=tu_host_de_supabase_o_localhost
+DB_USER=postgres
+DB_PASSWORD=your_secure_supabase_password
+DB_HOST=your_project_reference.supabase.co
 DB_PORT=5432
-5. Ejecutar Migraciones de Base de Datos
-Prepara y despliega el esquema relacional en tu base de datos PostgreSQL:
+```
+5. Execute Database Migrations
+Prepare the schemas and deploy the relational entity model onto your PostgreSQL database:
 
-Bash
-python manage.py makemigrations
+```Bash
+python manage.py makemigrations authentication choreography sales
 python manage.py migrate
-6. Iniciar el Servidor de Desarrollo
-Pon en marcha el backend local corriendo el script de ejecución de Django:
-
+```
+6. Start the Development Server
+Launch the local Django development environment:
+```
 Bash
 python manage.py runserver
-La API se inicializará correctamente y estará escuchando peticiones en: http://127.0.0.1:8000/api/
+```
+The API will initialize successfully and listen for incoming HTTP requests at: http://127.0.0.1:8000/api/
 
-🧪 Ejecución de Pruebas Automatizadas (Testing)
-Para comprobar la integridad de la base de datos, la seguridad en las rutas protegidas, la autenticación por roles y el correcto funcionamiento de los endpoints, ejecuta la suite de pruebas:
+## 🧪 Running Automated Tests
+To verify database integrity, route protection safety, RBAC permissions constraints, and proper endpoint request-response structures, run the testing suite:
 
-Bash
+```Bash
 python manage.py test
-👥 Contribuidores del Backend
-Desarrolladores Back-end:
+```
+### 👥 Backend Contributors
+Back-end Engineering Team:
+
 CAMILO ANDRES RISCANEVO COTRINA
+
 BRAYAN FERNANDO CRUZ PUERTA
-FREDDY ALEXANDER MELO BUITRAGO 
+
+FREDDY ALEXANDER MELO BUITRAGO
+
 VICTORIA YUAN CHEN
+
 YISEIRI YANUA SATIZABAL ORTIZ

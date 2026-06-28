@@ -1,0 +1,112 @@
+import environ
+from pathlib import Path
+
+# 1. Rutas base del proyecto
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# 2. Inicializar y cargar variables de entorno desde el archivo .env en la raíz
+env = environ.Env()
+environ.Env.read_env(env_file=str(BASE_DIR / '.env'))
+
+# 3. Configuraciones de Seguridad (Tomadas de forma segura desde el .env)
+SECRET_KEY = env('SECRET_KEY')
+DEBUG = env.get_value('DEBUG', cast=bool, default=False)
+ALLOWED_HOSTS = ['*']  # En desarrollo local permite cualquier host, ideal para pruebas
+
+# 4. Registro de Aplicaciones (Estructura modular con prefijo 'apps.')
+INSTALLED_APPS = [
+    # Aplicaciones nativas de Django
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    
+    # Librerías de terceros (API REST y Seguridad)
+    'rest_framework',
+    'corsheaders',
+    
+    # Tus módulos de negocio unificados en inglés
+    'apps.authentication',  # Maneja Login, Registro, Roles y CRUD interno de usuarios
+    'apps.choreography',    # Catálogo de canciones, videos y streaming seguro
+    'apps.sales',           # Modelado de Facturación, Ventas y Pasarela simulada
+]
+
+# 5. Capa de Seguridad Intermedia (Middlewares)
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # Debe ir estrictamente arriba para interceptar peticiones CORS
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+# 6. Enrutamiento y Servidores de Aplicación (Apuntando a la nueva carpeta 'core')
+ROOT_URLCONF = 'core.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = 'core.wsgi.application'
+ASGI_APPLICATION = 'core.asgi.application'
+
+# 7. Conexión limpia y segura a tu base de datos Supabase (PostgreSQL) via URL armada desde el .env
+DATABASES = {
+    'default': env.db_url_config(
+        f"postgres://{env('DB_USER')}:{env('DB_PASSWORD')}@{env('DB_HOST')}:{env('DB_PORT')}/{env('DB_NAME')}"
+    )
+}
+
+# 8. Validadores de contraseñas por defecto de Django
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
+# 9. Apuntar Django a tu modelo de Usuario Personalizado con UUID que crearemos en apps.authentication
+AUTH_USER_MODEL = 'authentication.User'
+
+# 10. Configuración Regional (Alineado con Univalle en Cali, Colombia)
+LANGUAGE_CODE = 'es-co'
+TIME_ZONE = 'America/Bogota'
+USE_I18N = True
+USE_TZ = True
+
+# 11. Configuración de Archivos Estáticos (CSS, JavaScript, Imágenes de la interfaz)
+STATIC_URL = 'static/'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# 12. Permitir conexiones desde tu servidor Front-End de React (usando Vite por defecto)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+
+# Opcional: Permitir credenciales (Cookies, Tokens) si son necesarias en el flujo con React
+CORS_ALLOW_CREDENTIALS = True

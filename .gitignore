@@ -1,0 +1,36 @@
+# Entorno Virtual
+env/
+venv/
+ENV/
+.env
+
+# Base de datos local (SQLite) - ¡Nunca se sube a GitHub!
+*.sqlite3
+
+# Archivos temporales de Python y Django
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*.mo
+*.pot
+
+# Configuraciones de editores de código
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
