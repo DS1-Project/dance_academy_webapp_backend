@@ -45,7 +45,13 @@ class UserViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
-        qs = User.objects.filter(role__in=INTERNAL_ROLES)
+        user = self.request.user
+       # 1. SI ES UN ROL INTERNO (Admin/Director) O SUPERUSUARIO -> VE TODO
+        if user.is_superuser or (hasattr(user, 'role') and IsAdminOrDirector()):
+            qs = User.objects.all()
+        else:
+            # 2. SI ES UN CLIENTE/ALUMNO -> SOLO SE VE A SÍ MISMO (Por seguridad)
+            qs = User.objects.filter(id=user.id)
 
         role = self.request.query_params.get('role')
         if role:
