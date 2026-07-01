@@ -18,7 +18,6 @@ ALLOWED_HOSTS = ['*']  # En desarrollo local permite cualquier host, ideal para 
 # 4. Registro de Aplicaciones (Estructura modular con prefijo 'apps.')
 INSTALLED_APPS = [
     # Aplicaciones nativas de Django
-    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
