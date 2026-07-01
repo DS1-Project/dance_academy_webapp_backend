@@ -18,6 +18,7 @@ ALLOWED_HOSTS = ['*']  # En desarrollo local permite cualquier host, ideal para 
 # 4. Registro de Aplicaciones (Estructura modular con prefijo 'apps.')
 INSTALLED_APPS = [
     # Aplicaciones nativas de Django
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -125,6 +126,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Puerto estándar de desarrollo de Vite
     "http://127.0.0.1:5173",
+    "https://dance-academy-webapp-frontend.vercel.app",
 ]
 
 # Opcional: Permitir credenciales (Cookies, Tokens) si son necesarias en el flujo con React
