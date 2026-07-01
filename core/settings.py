@@ -1,6 +1,8 @@
+import sys
+from datetime import timedelta
+
 import environ
 from pathlib import Path
-
 # 1. Rutas base del proyecto
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -16,6 +18,7 @@ ALLOWED_HOSTS = ['*']  # En desarrollo local permite cualquier host, ideal para 
 # 4. Registro de Aplicaciones (Estructura modular con prefijo 'apps.')
 INSTALLED_APPS = [
     # Aplicaciones nativas de Django
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -82,6 +85,14 @@ DATABASES = {
     }
 }
 
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'test_db.sqlite3',
+        }
+    }
+
 # 8. Validadores de contraseñas por defecto de Django
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -115,7 +126,26 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Puerto estándar de desarrollo de Vite
     "http://127.0.0.1:5173",
+    "https://dance-academy-webapp-frontend.vercel.app",
 ]
 
 # Opcional: Permitir credenciales (Cookies, Tokens) si son necesarias en el flujo con React
 CORS_ALLOW_CREDENTIALS = True
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+RECAPTCHA_SECRET_KEY = env('RECAPTCHA_SECRET_KEY', default='')
