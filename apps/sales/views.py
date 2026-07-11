@@ -5,7 +5,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.authentication.models import User
-from apps.authentication.permissions import IsAdminOrDirector
 
 from .models import Enrollment, Sale
 from .permissions import IsAdminOrDirectorOrReadOwn, IsClient, IsSaleOwnerOrAdmin
