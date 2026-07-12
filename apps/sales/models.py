@@ -19,6 +19,16 @@ class Sale(models.Model):
 
     def __str__(self):
         return f"Sale {self.id} - Total: {self.total_amount}"
+    
+    
+    # Calculamos el total de la venta sumando los detalles de la venta
+    def calculate_total(self):
+        total = self.details.aggregate(
+            total=Sum(F('quantity') * F('unit_price'))
+        )['total']
+
+        self.total_amount = total or 0
+        self.save()
 
 class SaleDetail(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
