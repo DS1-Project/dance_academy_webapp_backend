@@ -5,9 +5,11 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from apps.authentication.auth_views import LoginView
 from apps.authentication.views import UserViewSet
+from apps.sales.views import SaleViewSet
 
 router = DefaultRouter()
 router.register(r'auth/users', UserViewSet, basename='users')
+router.register(r'sales', SaleViewSet, basename='sales')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
