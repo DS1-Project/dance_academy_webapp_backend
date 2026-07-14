@@ -169,6 +169,7 @@ class HU06RegisterClientTests(AuthenticationAPITestCase):
                 'password_confirm': 'ClientPass123',
                 'first_name': 'New',
                 'last_name': 'Client',
+                'role': User.Role.CLIENT,
             },
             format='json',
         )
@@ -176,6 +177,24 @@ class HU06RegisterClientTests(AuthenticationAPITestCase):
         created = User.objects.get(email='newclient@test.com')
         self.assertEqual(created.role, User.Role.CLIENT)
         self.assertTrue(created.is_approved)
+
+    def test_teacher_registers_pending_approval(self):
+        response = self.client.post(
+            reverse('users-register'),
+            {
+                'email': 'newteacher@test.com',
+                'password': 'TeacherPass123',
+                'password_confirm': 'TeacherPass123',
+                'first_name': 'New',
+                'last_name': 'Teacher',
+                'role': User.Role.TEACHER,
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created = User.objects.get(email='newteacher@test.com')
+        self.assertEqual(created.role, User.Role.TEACHER)
+        self.assertFalse(created.is_approved)
 
     @override_settings(DEBUG=True)
     def test_unapproved_client_can_still_login(self):
@@ -199,6 +218,28 @@ class HU06RegisterClientTests(AuthenticationAPITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('access', response.data)
+
+    @override_settings(DEBUG=True)
+    def test_unapproved_teacher_cannot_login(self):
+        pending = User.objects.create_user(
+            username='pending.teacher',
+            email='pending.teacher@test.com',
+            password='TeacherPass123',
+            first_name='Pending',
+            last_name='Teacher',
+            role=User.Role.TEACHER,
+            is_approved=False,
+        )
+        response = self.client.post(
+            reverse('auth-login'),
+            {
+                'email': pending.email,
+                'password': 'TeacherPass123',
+                'captcha_token': 'dev-bypass',
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class HU07ClientProfileTests(AuthenticationAPITestCase):

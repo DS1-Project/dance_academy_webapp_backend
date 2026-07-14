@@ -150,10 +150,25 @@ class LoginSerializer(serializers.Serializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True, min_length=8)
+    role = serializers.ChoiceField(
+        choices=[
+            (User.Role.CLIENT, User.Role.CLIENT.label),
+            (User.Role.TEACHER, User.Role.TEACHER.label),
+        ],
+        required=False,
+        default=User.Role.CLIENT,
+    )
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'password_confirm', 'first_name', 'last_name']
+        fields = [
+            'email',
+            'password',
+            'password_confirm',
+            'first_name',
+            'last_name',
+            'role',
+        ]
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -167,17 +182,26 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Ya existe un usuario con este correo.')
         return value
 
+    def validate_role(self, value):
+        if value not in {User.Role.CLIENT, User.Role.TEACHER}:
+            raise serializers.ValidationError(
+                'Solo se puede registrar como cliente o profesor.'
+            )
+        return value
+
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
         email = validated_data['email']
+        role = validated_data.pop('role', User.Role.CLIENT)
+        is_approved = role == User.Role.CLIENT
         user = User(
             username=email.split('@')[0],
             email=email,
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
-            role=User.Role.CLIENT,
-            is_approved=True,
+            role=role,
+            is_approved=is_approved,
             is_active=True,
         )
         user.set_password(password)
