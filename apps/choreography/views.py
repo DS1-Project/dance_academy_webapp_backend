@@ -47,6 +47,11 @@ class DanceStyleViewSet(viewsets.ModelViewSet):
     ordering_fields = ['name']
     ordering = ['name']
 
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve'):
+            return [AllowAny()]
+        return [IsAuthenticated(), ReadOnlyOrStaffWrite()]
+
 
 class ChoreographyViewSet(viewsets.ModelViewSet):
     queryset = Choreography.objects.all()

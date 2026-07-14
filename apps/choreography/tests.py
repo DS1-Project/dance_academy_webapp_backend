@@ -347,3 +347,36 @@ class MediaUploadTests(ChoreographyAPITestCase):
             format='multipart',
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class SeedCatalogDemoTests(ChoreographyAPITestCase):
+    def test_seed_command_creates_five_teachers_with_videos(self):
+        from django.core.management import call_command
+
+        call_command('seed_catalog_demo', password='TeacherPass123')
+
+        emails = [t['email'] for t in __import__(
+            'apps.choreography.management.commands.seed_catalog_demo',
+            fromlist=['TEACHERS'],
+        ).TEACHERS]
+        teachers = User.objects.filter(email__in=emails, role=User.Role.TEACHER)
+        self.assertEqual(teachers.count(), 5)
+
+        for teacher in teachers:
+            choreos = Choreography.objects.filter(main_teacher=teacher, is_approved=True)
+            self.assertGreaterEqual(choreos.count(), 2)
+            self.assertLessEqual(choreos.count(), 10)
+            for choreo in choreos:
+                video_count = choreo.videos.count()
+                self.assertGreaterEqual(video_count, 1)
+                self.assertLessEqual(video_count, 20)
+
+        style_names = ['Salsa', 'Bachata', 'Merengue', 'Hip-Hop', 'Reggaetón']
+        self.assertEqual(
+            DanceStyle.objects.filter(name__in=style_names).count(),
+            5,
+        )
+
+    def test_anonymous_can_list_dance_styles(self):
+        response = self.client.get(reverse('dance-styles-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
