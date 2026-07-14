@@ -126,7 +126,9 @@ class LoginSerializer(serializers.Serializer):
         if not user.is_active:
             raise serializers.ValidationError('Esta cuenta está desactivada.')
 
-        if not user.is_approved:
+        # Los clientes pueden ingresar sin aprobación admin.
+        # Profesores/staff internos sí requieren is_approved.
+        if user.role != User.Role.CLIENT and not user.is_approved:
             raise serializers.ValidationError(
                 'Tu cuenta aún no ha sido aprobada por un administrador.'
             )
@@ -175,7 +177,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
             role=User.Role.CLIENT,
-            is_approved=False,
+            is_approved=True,
             is_active=True,
         )
         user.set_password(password)

@@ -160,7 +160,7 @@ class HU05LoginTests(AuthenticationAPITestCase):
 
 
 class HU06RegisterClientTests(AuthenticationAPITestCase):
-    def test_client_registers_with_pending_approval(self):
+    def test_client_registers_already_approved(self):
         response = self.client.post(
             reverse('users-register'),
             {
@@ -175,7 +175,30 @@ class HU06RegisterClientTests(AuthenticationAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         created = User.objects.get(email='newclient@test.com')
         self.assertEqual(created.role, User.Role.CLIENT)
-        self.assertFalse(created.is_approved)
+        self.assertTrue(created.is_approved)
+
+    @override_settings(DEBUG=True)
+    def test_unapproved_client_can_still_login(self):
+        pending = User.objects.create_user(
+            username='pending.client',
+            email='pending.client@test.com',
+            password='ClientPass123',
+            first_name='Pending',
+            last_name='Client',
+            role=User.Role.CLIENT,
+            is_approved=False,
+        )
+        response = self.client.post(
+            reverse('auth-login'),
+            {
+                'email': pending.email,
+                'password': 'ClientPass123',
+                'captcha_token': 'dev-bypass',
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
 
 
 class HU07ClientProfileTests(AuthenticationAPITestCase):
