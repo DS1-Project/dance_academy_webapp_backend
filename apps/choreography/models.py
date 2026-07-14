@@ -71,7 +71,6 @@ class ChoreographyStat(models.Model):
         average = self.choreography.reviews.aggregate(
             avg=Avg("rating")
         )["avg"]
-
         self.average_rating = average or 0
         self.save(update_fields=["average_rating"])
 
