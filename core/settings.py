@@ -126,6 +126,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Puerto estándar de desarrollo de Vite
     "http://127.0.0.1:5173",
     "https://dance-academy-webapp-frontend.vercel.app",
+    "https://web-magic-maker-831.lovable.app",
 ]
 
 # Opcional: Permitir credenciales (Cookies, Tokens) si son necesarias en el flujo con React
