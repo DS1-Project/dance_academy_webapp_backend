@@ -8,6 +8,9 @@ ENV/
 # Base de datos local (SQLite) - ¡Nunca se sube a GitHub!
 *.sqlite3
 
+# Media uploads
+media/
+
 # Archivos temporales de Python y Django
 __pycache__/
 *.pyc

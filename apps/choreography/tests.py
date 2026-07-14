@@ -306,3 +306,44 @@ class PurchasedAndHistoryTests(ChoreographyAPITestCase):
             format='json',
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class MediaUploadTests(ChoreographyAPITestCase):
+    def test_teacher_can_upload_video_file(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.authenticate(self.teacher)
+        upload = SimpleUploadedFile(
+            'clip.mp4',
+            b'fake-video-bytes',
+            content_type='video/mp4',
+        )
+        response = self.client.post(
+            reverse('media-upload'),
+            {'file': upload},
+            format='multipart',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('url', response.data)
+        self.assertIn('/media/', response.data['url'])
+
+    def test_upload_rejects_missing_file(self):
+        self.authenticate(self.teacher)
+        response = self.client.post(reverse('media-upload'), {}, format='multipart')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_upload_rejects_non_media_content_type(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.authenticate(self.teacher)
+        upload = SimpleUploadedFile(
+            'notes.txt',
+            b'hello',
+            content_type='text/plain',
+        )
+        response = self.client.post(
+            reverse('media-upload'),
+            {'file': upload},
+            format='multipart',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

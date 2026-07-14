@@ -121,6 +121,10 @@ USE_TZ = True
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Media (videos/imágenes subidos desde el frontend)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # 12. Permitir conexiones desde tu servidor Front-End de React (usando Vite por defecto)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Puerto estándar de desarrollo de Vite
