@@ -1,60 +1,308 @@
-from django.test import TestCase
+from decimal import Decimal
 
-# Create your tests here.
-from rest_framework.test import APITestCase
-from rest_framework import status
 from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
 
-from django.contrib.auth import get_user_model
-from .models import Choreography, DanceStyle
+from apps.authentication.models import User
+from apps.choreography.models import (
+    Choreography,
+    ChoreographyStat,
+    DanceStyle,
+    Review,
+    VideoClip,
+    VideoPlaybackLog,
+)
+from apps.sales.models import Enrollment
 
-User = get_user_model()
 
-
-class VideoPermissionTest(APITestCase):
-
+class ChoreographyAPITestCase(APITestCase):
     def setUp(self):
-        self.client_user = User.objects.create_user(
-            username="cliente",
-            password="123456"
+        self.admin = User.objects.create_user(
+            username='admin.user',
+            email='admin@test.com',
+            password='AdminPass123',
+            first_name='Admin',
+            last_name='User',
+            role=User.Role.ADMIN,
+            is_approved=True,
         )
-
         self.teacher = User.objects.create_user(
-            username="profesor",
-            password="123456"
+            username='teacher.user',
+            email='teacher@test.com',
+            password='TeacherPass123',
+            first_name='Teacher',
+            last_name='User',
+            role=User.Role.TEACHER,
+            is_approved=True,
         )
-
+        self.other_teacher = User.objects.create_user(
+            username='other.teacher',
+            email='other.teacher@test.com',
+            password='TeacherPass123',
+            first_name='Other',
+            last_name='Teacher',
+            role=User.Role.TEACHER,
+            is_approved=True,
+        )
+        self.client_user = User.objects.create_user(
+            username='client.user',
+            email='client@test.com',
+            password='ClientPass123',
+            first_name='Client',
+            last_name='User',
+            role=User.Role.CLIENT,
+            is_approved=True,
+        )
         self.style = DanceStyle.objects.create(
-            name="Salsa"
+            name='Salsa',
+            description='Ritmo salsa',
         )
-
         self.choreography = Choreography.objects.create(
-            title="Coreografía",
-            description="Descripción",
-            difficulty_level="beginner",
-            thumbnail_url="https://test.com/img.jpg",
+            title='Salsa Básica',
+            description='Introducción a salsa',
+            difficulty_level=Choreography.Difficulty.BEGINNER,
+            thumbnail_url='https://example.com/thumb.jpg',
+            is_approved=True,
             main_teacher=self.teacher,
             dance_style=self.style,
         )
+        ChoreographyStat.objects.create(
+            choreography=self.choreography,
+            actual_price=Decimal('29.99'),
+        )
+        self.video = VideoClip.objects.create(
+            choreography=self.choreography,
+            title='Clip 1',
+            video_url='https://example.com/video1.mp4',
+            sequence_order=1,
+            duration_seconds=120,
+        )
+        self.draft = Choreography.objects.create(
+            title='Borrador Bachata',
+            description='Sin aprobar',
+            difficulty_level=Choreography.Difficulty.INTERMEDIATE,
+            thumbnail_url='https://example.com/draft.jpg',
+            is_approved=False,
+            main_teacher=self.teacher,
+            dance_style=self.style,
+        )
+        ChoreographyStat.objects.create(
+            choreography=self.draft,
+            actual_price=Decimal('19.99'),
+        )
 
-    def test_client_cannot_create_video(self):
-        self.client.force_authenticate(self.client_user)
+    def authenticate(self, user):
+        self.client.force_authenticate(user=user)
 
-        data = {
-            "choreography": str(self.choreography.id),
-            "title": "Video 1",
-            "video_url": "https://youtube.com/video",
-            "sequence_order": 1,
-            "duration_seconds": 120,
-        }
 
+class DanceStyleTests(ChoreographyAPITestCase):
+    def test_authenticated_user_can_list_styles(self):
+        self.authenticate(self.client_user)
+        response = self.client.get(reverse('dance-styles-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data), 1)
+
+    def test_client_cannot_create_style(self):
+        self.authenticate(self.client_user)
         response = self.client.post(
-            "/api/choreography/videos/",
-            data,
-            format="json"
+            reverse('dance-styles-list'),
+            {'name': 'Bachata', 'description': 'Ritmo'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_can_create_style(self):
+        self.authenticate(self.admin)
+        response = self.client.post(
+            reverse('dance-styles-list'),
+            {'name': 'Bachata', 'description': 'Ritmo bachata'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['name'], 'Bachata')
+
+
+class CatalogAndTeacherTests(ChoreographyAPITestCase):
+    def test_client_lists_only_approved(self):
+        self.authenticate(self.client_user)
+        response = self.client.get(reverse('choreographies-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        titles = [item['title'] for item in response.data]
+        self.assertIn('Salsa Básica', titles)
+        self.assertNotIn('Borrador Bachata', titles)
+
+    def test_client_cannot_see_video_url_without_purchase(self):
+        self.authenticate(self.client_user)
+        response = self.client.get(
+            reverse('choreographies-detail', args=[self.choreography.id]),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['is_purchased'])
+        self.assertEqual(len(response.data['videos']), 1)
+        self.assertNotIn('video_url', response.data['videos'][0])
+
+    def test_teacher_can_create_choreography_with_price(self):
+        self.authenticate(self.teacher)
+        response = self.client.post(
+            reverse('choreographies-list'),
+            {
+                'title': 'Nueva Coreo',
+                'description': 'Descripción',
+                'difficulty_level': 'advanced',
+                'thumbnail_url': 'https://example.com/new.jpg',
+                'dance_style': str(self.style.id),
+                'actual_price': '45.50',
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(response.data['is_approved'])
+        self.assertEqual(
+            Decimal(response.data['stats']['actual_price']),
+            Decimal('45.50'),
+        )
+        self.assertEqual(
+            str(response.data['main_teacher']['id']),
+            str(self.teacher.id),
         )
 
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_403_FORBIDDEN
+    def test_teacher_can_add_video(self):
+        self.authenticate(self.teacher)
+        response = self.client.post(
+            reverse('choreographies-videos', args=[self.choreography.id]),
+            {
+                'title': 'Clip 2',
+                'video_url': 'https://example.com/video2.mp4',
+                'sequence_order': 2,
+                'duration_seconds': 90,
+            },
+            format='json',
         )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['title'], 'Clip 2')
+        self.assertEqual(self.choreography.videos.count(), 2)
+
+    def test_other_teacher_cannot_add_video(self):
+        self.authenticate(self.other_teacher)
+        response = self.client.post(
+            reverse('choreographies-videos', args=[self.choreography.id]),
+            {
+                'title': 'Hack',
+                'video_url': 'https://example.com/hack.mp4',
+                'sequence_order': 9,
+                'duration_seconds': 10,
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_can_approve(self):
+        self.authenticate(self.admin)
+        response = self.client.post(
+            reverse('choreographies-approve', args=[self.draft.id]),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.draft.refresh_from_db()
+        self.assertTrue(self.draft.is_approved)
+
+    def test_teacher_can_update_price(self):
+        self.authenticate(self.teacher)
+        response = self.client.patch(
+            reverse('choreographies-price', args=[self.choreography.id]),
+            {'actual_price': '35.00'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            Decimal(response.data['stats']['actual_price']),
+            Decimal('35.00'),
+        )
+
+    def test_mine_returns_teacher_uploads(self):
+        self.authenticate(self.teacher)
+        response = self.client.get(reverse('choreographies-mine'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        titles = [item['title'] for item in response.data]
+        self.assertIn('Salsa Básica', titles)
+        self.assertIn('Borrador Bachata', titles)
+
+
+class PurchasedAndHistoryTests(ChoreographyAPITestCase):
+    def setUp(self):
+        super().setUp()
+        Enrollment.objects.create(
+            client=self.client_user,
+            choreography=self.choreography,
+        )
+
+    def test_purchased_includes_video_urls(self):
+        self.authenticate(self.client_user)
+        response = self.client.get(reverse('choreographies-purchased'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['title'], 'Salsa Básica')
+        self.assertIn('video_url', response.data[0]['videos'][0])
+        self.assertIsNotNone(response.data[0]['acquired_at'])
+
+    def test_detail_shows_videos_when_purchased(self):
+        self.authenticate(self.client_user)
+        response = self.client.get(
+            reverse('choreographies-detail', args=[self.choreography.id]),
+        )
+        self.assertTrue(response.data['is_purchased'])
+        self.assertIn('video_url', response.data['videos'][0])
+
+    def test_client_can_log_playback_and_see_history(self):
+        self.authenticate(self.client_user)
+        play = self.client.post(
+            reverse('videos-play', args=[self.video.id]),
+        )
+        self.assertEqual(play.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(VideoPlaybackLog.objects.count(), 1)
+
+        history = self.client.get(reverse('choreographies-playback-history'))
+        self.assertEqual(history.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(history.data), 1)
+        self.assertEqual(history.data[0]['video_title'], 'Clip 1')
+
+    def test_non_enrolled_client_cannot_play(self):
+        other = User.objects.create_user(
+            username='other.client',
+            email='other@test.com',
+            password='ClientPass123',
+            role=User.Role.CLIENT,
+            is_approved=True,
+        )
+        self.authenticate(other)
+        response = self.client.post(reverse('videos-play', args=[self.video.id]))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_enrolled_client_can_review(self):
+        self.authenticate(self.client_user)
+        response = self.client.post(
+            reverse('choreographies-reviews', args=[self.choreography.id]),
+            {'rating': 5, 'comment': 'Excelente'},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Review.objects.count(), 1)
+        self.choreography.stats.refresh_from_db()
+        self.assertEqual(
+            Decimal(self.choreography.stats.average_rating),
+            Decimal('5.00'),
+        )
+
+    def test_duplicate_review_rejected(self):
+        self.authenticate(self.client_user)
+        self.client.post(
+            reverse('choreographies-reviews', args=[self.choreography.id]),
+            {'rating': 4},
+            format='json',
+        )
+        response = self.client.post(
+            reverse('choreographies-reviews', args=[self.choreography.id]),
+            {'rating': 3},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
