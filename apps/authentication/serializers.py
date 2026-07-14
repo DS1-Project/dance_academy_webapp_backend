@@ -152,7 +152,10 @@ class RegisterSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True, min_length=8)
     captcha_token = serializers.CharField(write_only=True)
     role = serializers.ChoiceField(
-        choices=User.Role.choices,
+        choices=[
+            (User.Role.CLIENT, User.Role.CLIENT.label),
+            (User.Role.TEACHER, User.Role.TEACHER.label),
+        ],
         required=False,
         default=User.Role.CLIENT,
     )
@@ -180,6 +183,13 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate_email(self, value):
         if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError('Ya existe un usuario con este correo.')
+        return value
+
+    def validate_role(self, value):
+        if value not in {User.Role.CLIENT, User.Role.TEACHER}:
+            raise serializers.ValidationError(
+                'Solo se puede registrar como cliente o profesor.'
+            )
         return value
 
     def create(self, validated_data):

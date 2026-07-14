@@ -201,7 +201,7 @@ class HU06RegisterClientTests(AuthenticationAPITestCase):
         self.assertFalse(created.is_approved)
 
     @override_settings(DEBUG=True)
-    def test_admin_registers_pending_approval(self):
+    def test_admin_cannot_self_register(self):
         response = self.client.post(
             reverse('users-register'),
             {
@@ -215,10 +215,8 @@ class HU06RegisterClientTests(AuthenticationAPITestCase):
             },
             format='json',
         )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        created = User.objects.get(email='newadmin@test.com')
-        self.assertEqual(created.role, User.Role.ADMIN)
-        self.assertFalse(created.is_approved)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(User.objects.filter(email='newadmin@test.com').exists())
 
     @override_settings(DEBUG=True)
     def test_unapproved_client_can_still_login(self):
