@@ -4,7 +4,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .captcha import validate_captcha_token
 from .models import User
-from .permissions import INTERNAL_ROLES, INTERNAL_ROLE_CHOICES
 
 USER_READ_ONLY_FIELDS = ('id', 'created_at', 'date_joined')
 USER_PUBLIC_FIELDS = (
@@ -41,19 +40,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
-    role = serializers.ChoiceField(choices=INTERNAL_ROLE_CHOICES)
+    role = serializers.ChoiceField(choices=User.Role.choices)
+    username = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = User
         fields = ['password', *USER_INTERNAL_WRITE_FIELDS]
-
-    def validate_role(self, value):
-        role = User.Role(value)
-        if role not in INTERNAL_ROLES:
-            raise serializers.ValidationError(
-                'Solo se pueden crear usuarios internos (admin, director o teacher).'
-            )
-        return role
 
     def validate_email(self, value):
         if User.objects.filter(email__iexact=value).exists():

@@ -62,6 +62,26 @@ class HU01CreateInternalUserTests(AuthenticationAPITestCase):
         self.assertEqual(created.role, User.Role.TEACHER)
         self.assertTrue(created.check_password('Teacher123'))
 
+    def test_admin_can_create_client_user(self):
+        self.authenticate(self.admin)
+        response = self.client.post(
+            reverse('users-list'),
+            {
+                'email': 'newclient@test.com',
+                'password': 'ClientPass123',
+                'first_name': 'New',
+                'last_name': 'Client',
+                'role': User.Role.CLIENT,
+                'is_approved': True,
+                'is_active': True,
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, msg=str(response.data))
+        created = User.objects.get(email='newclient@test.com')
+        self.assertEqual(created.role, User.Role.CLIENT)
+        self.assertTrue(created.is_approved)
+
     def test_client_cannot_create_internal_user(self):
         self.authenticate(self.client_user)
         response = self.client.post(
