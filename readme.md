@@ -1,76 +1,90 @@
 # ⚙️ DanceAcademyApp - Backend API 🛡️
 
-This is the robust and scalable REST API that powers the entire ecosystem of **DanceAcademyApp**. It provides secure user authentication, Role-Based Access Control (RBAC), transactional management for choreography purchases, and optimized SQL aggregations for commercial statistical reporting.
+## Descripción
+
+DanceAcademyApp - Backend API es la API REST que soporta todo el ecosistema de DanceAcademyApp. Está diseñada para ofrecer una arquitectura segura, escalable y modular, permitiendo la autenticación de usuarios, el control de acceso basado en roles (RBAC), la gestión transaccional de compras de coreografías y la generación de reportes estadísticos mediante consultas optimizadas sobre bases de datos relacionales.
 
 ---
 
-## 🛠️ Tech Stack
+## Tecnologías Utilizadas
 
-* **Language:** Python 3.11+ 🐍
-* **Main Framework:** Django 5.0 + Django REST Framework (DRF)
-* **Relational Database:** PostgreSQL (Supabase / Local)
-* **Authentication:** JWT (JSON Web Tokens) via `djangorestframework-simplejwt`
-* **Testing:** Django Test Cases (Unit & Integration tests)
+- Python 3.11+
+- Django 5
+- Django REST Framework (DRF)
+- PostgreSQL
+- Supabase
+- JWT (JSON Web Tokens)
+- djangorestframework-simplejwt
+- Django Test Framework
 
 ---
 
-## 📦 Project Structure
+## Estructura del Proyecto
 
 ```text
 backend/
-├── core/                        # Global Django configuration (settings, urls, wsgi/asgi)
-├── apps/                        # Modular business domain applications
-│   ├── authentication/          # User profiles, Registration, Login, JWT, and RBAC (Admin, Director, Teacher, Client)
-│   ├── choreography/            # Catalog of songs, video streaming logs, reviews, and statistics
-│   └── sales/                   # Invoicing, Sales, details, and simulated payment gateway
-├── env/                         # Virtual environment directory (isolated dependencies)
-├── .env                         # Hidden local file containing secure database keys and credentials
-├── .env.example                 # Template for required environment connection strings
-├── manage.py                    # Django Command Line Interface (CLI)
-└── requirements.txt             # Project dependencies and packaged libraries
-└── .env.example         # Plantilla de secretos e hilos de conexión a la BD
+├── core/                        # Configuración global de Django (settings, urls, wsgi, asgi)
+├── apps/                        # Aplicaciones modulares del dominio de negocio
+│   ├── authentication/          # Gestión de usuarios, registro, inicio de sesión, JWT y RBAC
+│   ├── choreography/            # Catálogo de coreografías, registros de visualización, reseñas y estadísticas
+│   └── sales/                   # Facturación, ventas, detalles de compra y simulación de pasarela de pago
+├── env/                         # Entorno virtual del proyecto
+├── .env                         # Variables de entorno y credenciales locales
+├── .env.example                 # Plantilla de variables de entorno requeridas
+├── manage.py                    # Interfaz de línea de comandos de Django
+└── requirements.txt             # Dependencias del proyecto
 ```
 
-## ⚙️  Configuration & Local Installation
-Follow these detailed steps to set up the environment and run the development server on your machine:
+---
 
-1. Navigate to the Backend Directory
-Open your terminal and enter the project backend root folder:
+## Configuración e Instalación Local
 
-```Bash
+Siga los pasos descritos a continuación para configurar el entorno y ejecutar el servidor de desarrollo.
+
+### 1. Ingresar al directorio del backend
+
+```bash
 cd dance_academy_webapp_backend
 ```
-2. Activate the Virtual Environment
-Activate your existing env folder based on your Operating System and chosen terminal:
 
-In Windows (Command Prompt / CMD):
+### 2. Activar el entorno virtual
 
-```DOS
+En Windows (CMD):
+
+```cmd
 env\Scripts\activate
 ```
-In Windows (PowerShell):
 
-```PowerShell
+En Windows (PowerShell):
+
+```powershell
 .\env\Scripts\Activate.ps1
 ```
-In macOS / Linux / Git Bash:
 
-```Bash
+En macOS, Linux o Git Bash:
+
+```bash
 source env/bin/activate
 ```
-(Once activated, you will see (env) at the beginning of your terminal line).
 
-3. Install Project Dependencies
-Ensure pip is upgraded and install all required external libraries:
+Una vez activado el entorno virtual, observará el prefijo `(env)` al inicio de la terminal.
 
-```Bash
+### 3. Instalar las dependencias del proyecto
+
+Actualice `pip` e instale las dependencias requeridas:
+
+```bash
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
-4. Configure Environment Variables
-Create a file named .env in the root backend directory (at the same level as manage.py) using .env.example as a template. Populate it with your custom Django secrets and Supabase credentials:
 
-```Plaintext
+### 4. Configurar las variables de entorno
+
+Cree un archivo llamado `.env` en la raíz del proyecto utilizando `.env.example` como referencia.
+
+Ejemplo:
+
+```env
 DEBUG=True
 SECRET_KEY=your_custom_django_secret_key_here
 
@@ -80,36 +94,83 @@ DB_PASSWORD=your_secure_supabase_password
 DB_HOST=your_project_reference.supabase.co
 DB_PORT=5432
 ```
-5. Execute Database Migrations
-Prepare the schemas and deploy the relational entity model onto your PostgreSQL database:
 
-```Bash
+Asegúrese de reemplazar los valores de ejemplo por las credenciales correspondientes a su entorno.
+
+### 5. Ejecutar las migraciones
+
+Genere y aplique las migraciones necesarias para crear la estructura de la base de datos:
+
+```bash
 python manage.py makemigrations authentication choreography sales
 python manage.py migrate
 ```
-6. Start the Development Server
-Launch the local Django development environment:
-```
-Bash
+
+### 6. Iniciar el servidor de desarrollo
+
+Ejecute el siguiente comando:
+
+```bash
 python manage.py runserver
 ```
-The API will initialize successfully and listen for incoming HTTP requests at: http://127.0.0.1:8000/api/
 
-## 🧪 Running Automated Tests
-To verify database integrity, route protection safety, RBAC permissions constraints, and proper endpoint request-response structures, run the testing suite:
+La API estará disponible en:
 
-```Bash
+```text
+http://127.0.0.1:8000/api/
+```
+
+---
+
+## Pruebas Automatizadas
+
+Para verificar la integridad del sistema, las restricciones de acceso, los permisos definidos por roles y el correcto funcionamiento de los endpoints, ejecute la suite de pruebas:
+
+```bash
 python manage.py test
 ```
-### 👥 Backend Contributors
-Back-end Engineering Team:
 
-CAMILO ANDRES RISCANEVO COTRINA
+---
 
-BRAYAN FERNANDO CRUZ PUERTA
+## Principales Funcionalidades
 
-FREDDY ALEXANDER MELO BUITRAGO
+- Autenticación basada en JWT.
+- Control de acceso basado en roles (RBAC).
+- Administración de usuarios y perfiles.
+- Gestión de coreografías y catálogo musical.
+- Registro de visualizaciones y actividad de usuarios.
+- Sistema de ventas y facturación.
+- Simulación de pasarela de pagos.
+- Generación de estadísticas e indicadores comerciales.
+- API REST documentada y preparada para integraciones.
 
-VICTORIA YUAN CHEN
+---
 
-YISEIRI YANUA SATIZABAL ORTIZ
+## Roles del Sistema
+
+La plataforma implementa un modelo de permisos basado en roles para garantizar la seguridad y el acceso adecuado a los recursos.
+
+Roles disponibles:
+
+- Administrador
+- Director
+- Profesor
+- Cliente
+
+Cada rol cuenta con permisos específicos de acuerdo con sus responsabilidades dentro de la plataforma.
+
+---
+
+## Equipo de Desarrollo Backend
+
+- Camilo Andrés Riscanevo Cotrina
+- Brayan Fernando Cruz Puerta
+- Freddy Alexander Melo Buitrago
+- Victoria Yuan Chen
+- Yiseiri Yanua Satizábal Ortiz
+
+---
+
+## Licencia
+
+Este proyecto forma parte de DanceAcademyApp y su uso está sujeto a las políticas, acuerdos y condiciones establecidas por el equipo de desarrollo y la organización propietaria del software.
