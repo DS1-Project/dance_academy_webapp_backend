@@ -160,6 +160,7 @@ class HU05LoginTests(AuthenticationAPITestCase):
 
 
 class HU06RegisterClientTests(AuthenticationAPITestCase):
+    @override_settings(DEBUG=True)
     def test_client_registers_already_approved(self):
         response = self.client.post(
             reverse('users-register'),
@@ -170,6 +171,7 @@ class HU06RegisterClientTests(AuthenticationAPITestCase):
                 'first_name': 'New',
                 'last_name': 'Client',
                 'role': User.Role.CLIENT,
+                'captcha_token': 'dev-bypass',
             },
             format='json',
         )
@@ -178,6 +180,7 @@ class HU06RegisterClientTests(AuthenticationAPITestCase):
         self.assertEqual(created.role, User.Role.CLIENT)
         self.assertTrue(created.is_approved)
 
+    @override_settings(DEBUG=True)
     def test_teacher_registers_pending_approval(self):
         response = self.client.post(
             reverse('users-register'),
@@ -188,12 +191,33 @@ class HU06RegisterClientTests(AuthenticationAPITestCase):
                 'first_name': 'New',
                 'last_name': 'Teacher',
                 'role': User.Role.TEACHER,
+                'captcha_token': 'dev-bypass',
             },
             format='json',
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         created = User.objects.get(email='newteacher@test.com')
         self.assertEqual(created.role, User.Role.TEACHER)
+        self.assertFalse(created.is_approved)
+
+    @override_settings(DEBUG=True)
+    def test_admin_registers_pending_approval(self):
+        response = self.client.post(
+            reverse('users-register'),
+            {
+                'email': 'newadmin@test.com',
+                'password': 'AdminPass123',
+                'password_confirm': 'AdminPass123',
+                'first_name': 'New',
+                'last_name': 'Admin',
+                'role': User.Role.ADMIN,
+                'captcha_token': 'dev-bypass',
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created = User.objects.get(email='newadmin@test.com')
+        self.assertEqual(created.role, User.Role.ADMIN)
         self.assertFalse(created.is_approved)
 
     @override_settings(DEBUG=True)

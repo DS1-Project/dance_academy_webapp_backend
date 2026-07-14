@@ -150,11 +150,9 @@ class LoginSerializer(serializers.Serializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True, min_length=8)
+    captcha_token = serializers.CharField(write_only=True)
     role = serializers.ChoiceField(
-        choices=[
-            (User.Role.CLIENT, User.Role.CLIENT.label),
-            (User.Role.TEACHER, User.Role.TEACHER.label),
-        ],
+        choices=User.Role.choices,
         required=False,
         default=User.Role.CLIENT,
     )
@@ -168,9 +166,11 @@ class RegisterSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'role',
+            'captcha_token',
         ]
 
     def validate(self, attrs):
+        validate_captcha_token(attrs['captcha_token'])
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError(
                 {'password_confirm': 'Las contraseñas no coinciden.'}
@@ -182,15 +182,9 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Ya existe un usuario con este correo.')
         return value
 
-    def validate_role(self, value):
-        if value not in {User.Role.CLIENT, User.Role.TEACHER}:
-            raise serializers.ValidationError(
-                'Solo se puede registrar como cliente o profesor.'
-            )
-        return value
-
     def create(self, validated_data):
         validated_data.pop('password_confirm')
+        validated_data.pop('captcha_token')
         password = validated_data.pop('password')
         email = validated_data['email']
         role = validated_data.pop('role', User.Role.CLIENT)
