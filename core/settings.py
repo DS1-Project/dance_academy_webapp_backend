@@ -129,6 +129,11 @@ CORS_ALLOWED_ORIGINS = [
     "https://web-magic-maker-831.lovable.app",
 ]
 
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.lovable\.app$",
+    r"^https://.*\.lovableproject\.com$",
+]
+
 # Opcional: Permitir credenciales (Cookies, Tokens) si son necesarias en el flujo con React
 CORS_ALLOW_CREDENTIALS = True
 
