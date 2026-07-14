@@ -78,19 +78,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 class UserInternalUpdateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, min_length=8)
-    role = serializers.ChoiceField(choices=INTERNAL_ROLE_CHOICES)
+    role = serializers.ChoiceField(choices=User.Role.choices, required=False)
 
     class Meta:
         model = User
         fields = ['password', *USER_INTERNAL_WRITE_FIELDS]
-
-    def validate_role(self, value):
-        role = User.Role(value)
-        if role not in INTERNAL_ROLES:
-            raise serializers.ValidationError(
-                'Solo se pueden asignar roles internos (admin, director o teacher).'
-            )
-        return role
 
     def validate_email(self, value):
         user = self.instance

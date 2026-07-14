@@ -120,6 +120,39 @@ class HU03UpdateInternalUserTests(AuthenticationAPITestCase):
         self.teacher.refresh_from_db()
         self.assertEqual(self.teacher.first_name, 'Updated')
 
+    def test_admin_can_change_role_and_approval_status(self):
+        self.authenticate(self.admin)
+        pending = User.objects.create_user(
+            username='pending.teacher',
+            email='pending.teacher@test.com',
+            password='Teacher123',
+            role=User.Role.TEACHER,
+            is_approved=False,
+        )
+        response = self.client.patch(
+            reverse('users-detail', kwargs={'pk': pending.pk}),
+            {
+                'role': User.Role.DIRECTOR,
+                'is_approved': True,
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        pending.refresh_from_db()
+        self.assertEqual(pending.role, User.Role.DIRECTOR)
+        self.assertTrue(pending.is_approved)
+
+    def test_admin_can_assign_client_role(self):
+        self.authenticate(self.admin)
+        response = self.client.patch(
+            reverse('users-detail', kwargs={'pk': self.teacher.pk}),
+            {'role': User.Role.CLIENT},
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.teacher.refresh_from_db()
+        self.assertEqual(self.teacher.role, User.Role.CLIENT)
+
 
 class HU04SoftDeleteInternalUserTests(AuthenticationAPITestCase):
     def setUp(self):
