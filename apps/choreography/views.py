@@ -1,3 +1,7 @@
-from django.shortcuts import render
+from rest_framework import generics
+from .models import Choreography
+from .serializers import ChoreographySerializer
 
-# Create your views here.
+class ChoreographyDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Choreography.objects.all()
+    serializer_class = ChoreographySerializer
