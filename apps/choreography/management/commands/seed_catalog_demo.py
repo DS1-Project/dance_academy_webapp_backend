@@ -71,21 +71,57 @@ TEACHERS = [
     },
 ]
 
-SAMPLE_VIDEO_URLS = [
-    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    "https://www.youtube.com/watch?v=3JZ_D3ELwOQ",
-    "https://www.youtube.com/watch?v=eY52Zsg-KVI",
-    "https://www.youtube.com/watch?v=kJQP7kiw5Fk",
-    "https://www.youtube.com/watch?v=OPf0YbXqDm0",
-]
+# Tutoriales YouTube reales de cada género + miniaturas Pexels de baile.
+GENRE_VIDEO_URLS = {
+    "Salsa": [
+        "https://www.youtube.com/watch?v=3YdanXsm5Vo",
+        "https://www.youtube.com/watch?v=hX7_1DUWJJQ",
+        "https://www.youtube.com/watch?v=6R0cLhESYaQ",
+    ],
+    "Bachata": [
+        "https://www.youtube.com/watch?v=xhrdh-uFkog",
+        "https://www.youtube.com/watch?v=uYogZ8wGrv0",
+        "https://www.youtube.com/watch?v=QmWRe4GRH8k",
+    ],
+    "Merengue": [
+        "https://www.youtube.com/watch?v=daaHi0jtHlw",
+        "https://www.youtube.com/watch?v=sdh3b5hZOC0",
+        "https://www.youtube.com/watch?v=amuqoK53QVU",
+    ],
+    "Hip-Hop": [
+        "https://www.youtube.com/watch?v=ujREEgxEP7g",
+        "https://www.youtube.com/watch?v=Z3Z6Qii-g2Y",
+        "https://www.youtube.com/watch?v=lYpRasK4c9k",
+    ],
+    "Reggaetón": [
+        "https://www.youtube.com/watch?v=JTn1h8pZSMU",
+        "https://www.youtube.com/watch?v=G3wEHSkBksI",
+        "https://www.youtube.com/watch?v=JTn1h8pZSMU",
+    ],
+}
 
-THUMBNAILS = [
-    "https://picsum.photos/seed/dance1/640/360",
-    "https://picsum.photos/seed/dance2/640/360",
-    "https://picsum.photos/seed/dance3/640/360",
-    "https://picsum.photos/seed/dance4/640/360",
-    "https://picsum.photos/seed/dance5/640/360",
-]
+GENRE_THUMBNAILS = {
+    "Salsa": (
+        "https://images.pexels.com/photos/37943801/pexels-photo-37943801.jpeg"
+        "?auto=compress&cs=tinysrgb&w=640&h=360&fit=crop"
+    ),
+    "Bachata": (
+        "https://images.pexels.com/photos/6926433/pexels-photo-6926433.jpeg"
+        "?auto=compress&cs=tinysrgb&w=640&h=360&fit=crop"
+    ),
+    "Merengue": (
+        "https://images.pexels.com/photos/2188012/pexels-photo-2188012.jpeg"
+        "?auto=compress&cs=tinysrgb&w=640&h=360&fit=crop"
+    ),
+    "Hip-Hop": (
+        "https://images.pexels.com/photos/6224442/pexels-photo-6224442.jpeg"
+        "?auto=compress&cs=tinysrgb&w=640&h=360&fit=crop"
+    ),
+    "Reggaetón": (
+        "https://images.pexels.com/photos/1701202/pexels-photo-1701202.jpeg"
+        "?auto=compress&cs=tinysrgb&w=640&h=360&fit=crop"
+    ),
+}
 
 DIFFICULTIES = [
     Choreography.Difficulty.BEGINNER,
@@ -166,6 +202,8 @@ class Command(BaseCommand):
             for n in range(count):
                 style_name = style_cycle[n % len(style_cycle)]
                 title = f"{style_name} con {user.first_name} #{n + 1}"
+                genre_videos = GENRE_VIDEO_URLS[style_name]
+                genre_thumb = GENRE_THUMBNAILS[style_name]
                 choreography, was_created = Choreography.objects.get_or_create(
                     title=title,
                     main_teacher=user,
@@ -175,10 +213,27 @@ class Command(BaseCommand):
                             f"{user.first_name} {user.last_name}."
                         ),
                         "difficulty_level": DIFFICULTIES[n % len(DIFFICULTIES)],
-                        "thumbnail_url": THUMBNAILS[(index + n) % len(THUMBNAILS)],
+                        "thumbnail_url": genre_thumb,
                         "is_approved": True,
                         "dance_style": styles[style_name],
                     },
+                )
+
+                # Refresh genre media on re-seed so demo data stays aligned.
+                choreography.description = (
+                    f"Paquete de {style_name.lower()} impartido por "
+                    f"{user.first_name} {user.last_name}."
+                )
+                choreography.thumbnail_url = genre_thumb
+                choreography.dance_style = styles[style_name]
+                choreography.is_approved = True
+                choreography.save(
+                    update_fields=[
+                        "description",
+                        "thumbnail_url",
+                        "dance_style",
+                        "is_approved",
+                    ]
                 )
 
                 # Assign one guest from another teacher when possible
@@ -203,12 +258,16 @@ class Command(BaseCommand):
 
                 # 1-20 videos: vary by teacher/choreo index, clamped
                 video_count = max(1, min(20, 2 + ((index + 1) * (n + 2)) % 19))
+                for clip in choreography.videos.all():
+                    clip.video_url = genre_videos[(clip.sequence_order - 1) % len(genre_videos)]
+                    clip.save(update_fields=["video_url"])
+
                 existing_videos = choreography.videos.count()
                 for v in range(existing_videos, video_count):
                     VideoClip.objects.create(
                         choreography=choreography,
                         title=f"Clip {v + 1} — {title}",
-                        video_url=SAMPLE_VIDEO_URLS[v % len(SAMPLE_VIDEO_URLS)],
+                        video_url=genre_videos[v % len(genre_videos)],
                         sequence_order=v + 1,
                         duration_seconds=60 + (v * 15) % 180,
                     )

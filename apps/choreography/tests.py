@@ -377,6 +377,13 @@ class SeedCatalogDemoTests(ChoreographyAPITestCase):
             5,
         )
 
+        for choreo in Choreography.objects.filter(main_teacher__in=teachers):
+            style_name = choreo.dance_style.name
+            self.assertIn('pexels.com', choreo.thumbnail_url)
+            for clip in choreo.videos.all():
+                self.assertNotIn('dQw4w9WgXcQ', clip.video_url)
+                self.assertTrue(clip.video_url.startswith('https://www.youtube.com/'))
+
     def test_anonymous_can_list_dance_styles(self):
         response = self.client.get(reverse('dance-styles-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
