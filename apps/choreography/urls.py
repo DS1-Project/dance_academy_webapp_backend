@@ -1,5 +1,10 @@
 from django.urls import path
+from .views import ChoreographyDetailView
 
 urlpatterns = [
-    # Temporalmente vacío para que el servidor encienda
+    path(
+        "coreografias/<uuid:pk>/",
+        ChoreographyDetailView.as_view(),
+        name="coreografia-detail",
+    ),
 ]

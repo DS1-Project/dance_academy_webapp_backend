@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models import Avg
 import uuid
 
 class DanceStyle(models.Model):
@@ -63,14 +65,52 @@ class ChoreographyStat(models.Model):
     total_sales_count = models.IntegerField(default=0)
     average_rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
     last_updated = models.DateTimeField(auto_now=True)
+    
+    #actualizamos el promedio de calificaciones cade vez que se agrega una nueva calificación
+    def update_average_rating(self):
+        average = self.choreography.reviews.aggregate(
+            avg=Avg("rating")
+        )["avg"]
+        self.average_rating = average or 0
+        self.save(update_fields=["average_rating"])
 
 class Review(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='choreography_reviews')
-    choreography = models.ForeignKey(Choreography, on_delete=models.CASCADE, related_name='reviews')
-    rating = models.IntegerField()
+    client = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='choreography_reviews'
+    )
+
+    choreography = models.ForeignKey(
+        Choreography,
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+
+    rating = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(5)
+        ]
+    )
     comment = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Muestra primero las reseñas más recientes.
+        ordering = ['-created_at']
+        
+        # Evita que un cliente califique la misma coreografía más de una vez.
+        constraints = [
+            models.UniqueConstraint(
+                fields=['client', 'choreography'],
+                name='unique_review_per_client'
+            )
+        ]
+    # Representación legible de la reseña en el panel de administración.
+    def __str__(self):
+        return f"{self.client} - {self.choreography} ({self.rating}/5)"
 
 class VideoPlaybackLog(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
