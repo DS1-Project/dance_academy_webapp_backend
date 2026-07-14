@@ -2,7 +2,7 @@ from django.db.models import Prefetch, Q
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter, SearchFilter
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.authentication.models import User
@@ -79,6 +79,8 @@ class ChoreographyViewSet(viewsets.ModelViewSet):
         return ChoreographyListSerializer
 
     def get_permissions(self):
+        if self.action in ('list', 'retrieve'):
+            return [AllowAny()]
         if self.action == 'create':
             return [IsTeacherOrStaff()]
         if self.action in ('update', 'partial_update', 'destroy', 'price'):
